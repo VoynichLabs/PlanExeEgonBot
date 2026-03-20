@@ -4,7 +4,7 @@
 **Date:** 2026-03-20
 **Status:** Ready for review
 **For:** PlanExeOrg/PlanExe PR
-**Evidence base:** Files 01–04 in this directory + Bubba's research in `research/loda-dsl-exploration/` and `research/dogfooding-evidence/`
+**Evidence base:** All evidence is inline in this document. Supporting research is in [VoynichLabs/swarm-coordination](https://github.com/VoynichLabs/swarm-coordination) under `plans/egon-dogfood-pr/` and `research/`.
 
 ---
 
@@ -14,13 +14,38 @@ PlanExe's analytical pipeline is strong; its output format prevents agents from 
 
 ---
 
-## The Evidence (from files 01–04)
+## The Evidence
 
-**168 real plans** from arc-explainer (8 months, 4,185 commits) show that plans ship at 65-75% when they have 5 structural features. PlanExe's output scores **1.0 out of 8** on those features (file 01, file 02).
+### What makes plans executable (168 plans, 8 months)
 
-**22 real failures** from 47 days of lobster ops trace to two root causes: no prerequisite check before task execution, and no acceptance criterion to verify task output (file 04). PlanExe's critique pipeline (PremiseAttack) correctly identifies risks but those findings don't propagate to the execution tasks (file 02, "Disconnect A").
+Analysis of 168 dated plan files from the [arc-explainer](https://github.com/markbarney/arc-explainer) project (4,185 commits, Sep 2025 – Mar 2026) identified 8 structural patterns that predict whether a plan ships:
 
-**LODA-Agent DSL** is viable as a notation and audit tool for expressing plan structure — 7 of 8 gaps are addressable. The Hybrid Monitor architecture (PlanExe compiles natural language → LODA spec → monitor validates execution) closes both structural disconnects (file 03, Bubba's `notation-vs-execution.md`).
+1. **Specific file paths** — plans naming exact files ship at ~85% vs ~30% without (#1 predictor)
+2. **Narrow scope (≤80 lines)** — shipped plans avg ~80 lines; 200+ line plans stall or get decomposed
+3. **Numbered steps** — agents treat numbered lists as checklists (+40pp ship rate vs bullets)
+4. **Root cause before solution** — bug fix plans with diagnosis first ship at +50pp
+5. **CHANGELOG forcing function** — plans referenced in CHANGELOG entries ship at ~90% vs ~35%
+6. **Explicit non-goals** — prevents scope creep mid-execution
+7. **Acceptance criteria** — verifiable done-state
+8. **Investigation/implementation split** — prevents stalled audits
+
+PlanExe's current output scores **1.0 out of 8** on these patterns on average. PremiseAttack scores best (2/8 — strong on root cause), WBS L3 tasks score worst (0.5/8 — no file paths, no steps, no acceptance criteria).
+
+### Two structural disconnects
+
+**Disconnect A — Diagnosis doesn't propagate to execution:** PremiseAttack correctly identifies plan failures in Phase 2, but WBS tasks in Phase 23 are generated without those critique findings as grounding constraints. Example from the Batman RICO run: PremiseAttack says "budget is insufficient for forensic accounting" — WBS task 23.7 says "allocate the budget" with zero awareness of the critique.
+
+**Disconnect B — Generation stops where execution begins:** PlanExe outputs task descriptions ("what to do"), not executable procedures. No numbered steps, no file paths, no done-state. An agent receives a correct goal with no verifiable procedure.
+
+### 22 real failures from 47 days of lobster ops
+
+22 confirmed failures across 47 days of three OpenClaw agents (Egon, Bubba, Larry) operating on PlanExe trace to **two root causes**:
+- **No prerequisite check before task execution** (config cascades, wrong adapter, stale credentials, missing env vars)
+- **No acceptance criterion to verify task output** (wrong metrics shipped, fabricated website content, community contributors in data)
+
+### LODA-Agent DSL feasibility
+
+LODA assembly (Simon's language for integer sequences, [loda-lang.org](https://loda-lang.org/)) is viable as a notation and audit tool for expressing plan structure — 7 of 8 gaps are addressable. The Hybrid Monitor architecture (PlanExe compiles natural language → LODA spec → monitor validates execution) closes both structural disconnects. Registers hold task handle IDs (control plane), not content (data plane). The `lpb` convergence guard enforces bounded execution. 4 dialect extensions are needed: `brk` (early termination), `$0` convention (plan status), `label`/`call`, `par`/`await`.
 
 ---
 
@@ -62,7 +87,7 @@ PlanExe's analytical pipeline is strong; its output format prevents agents from 
 [filled in after execution — what shipped, what diverged, what was learned]
 ```
 
-**Why this format:** Plans with file paths ship at 85% vs 30% without. Plans under 80 lines ship at 75% vs 25% for 200+ lines. Numbered steps correlate with +40pp ship rate vs bullets. These aren't opinions — they're from 168 real plans across 8 months (file 01).
+**Why this format:** Plans with file paths ship at ~85% vs ~30% without. Plans under 80 lines ship at ~75% vs ~25% for 200+ lines. Numbered steps correlate with +40pp ship rate vs bullets. These aren't opinions — they're from 168 real plans across 8 months of agent-driven development (see Evidence section above).
 
 **Key design principle:** PremiseAttack findings become Prerequisites, not just a report. The critique *gates* the execution rather than sitting in a separate document.
 
@@ -72,12 +97,12 @@ PlanExe's analytical pipeline is strong; its output format prevents agents from 
 
 **Why LODA specifically:**
 - Simon already built LODA and understands the computational model deeply
-- The instruction set maps cleanly to agent task coordination (file 03)
+- The instruction set maps cleanly to agent task coordination (see LODA-Agent DSL feasibility above)
 - `lpb` convergence guard enforces bounded execution — no infinite loops
-- Integer-only limitation dissolves when registers hold task handle IDs, not content (Bubba's "control plane / data plane split")
+- Integer-only limitation dissolves when registers hold task handle IDs, not content ("control plane / data plane split")
 - The miner's mutation vocabulary (`genome.rs`) suggests future automated plan improvement
 
-**What it looks like** (from Bubba's prototypes):
+**What it looks like** (prototype):
 
 ```asm
 ; Plan: Fix PremiseAttack schema validation bug
@@ -99,13 +124,13 @@ equ $0,1          ; ACCEPTANCE: tests pass
 brk $0            ; abort if tests fail
 ```
 
-**Hybrid Monitor:** A lightweight runtime that reads the LODA-Agent program and validates execution against it — checking that gates pass, steps execute in order, and acceptance criteria are met. Not a LODA interpreter — an audit trail validator. (See Bubba's `notation-vs-execution.md` for the full architecture.)
+**Hybrid Monitor:** A lightweight runtime that reads the LODA-Agent program and validates execution against it — checking that gates pass, steps execute in order, and acceptance criteria are met. Not a LODA interpreter — an audit trail validator.
 
 ### Ask 3: CompletionRecordTask (post-execution)
 
 **What:** After plan execution, the agent writes a completion record: what shipped, what files changed, what diverged from the plan.
 
-**Why:** The arc-explainer CHANGELOG is a forcing function — entries that reference a plan have a 90% ship rate vs 35% for entries without plan references (Bubba's ship-rate analysis). The completion record closes the loop.
+**Why:** The arc-explainer CHANGELOG is a forcing function — entries that reference a plan have a ~90% ship rate vs ~35% for entries without plan references. The completion record closes the loop.
 
 **Format:**
 
@@ -152,4 +177,4 @@ This feeds back into future planning — PlanExe can read completion records to 
 
 ---
 
-*This proposal is grounded in 168 real plans (arc-explainer), 22 real failures (47 days of lobster ops), 5 prototype LODA programs (Bubba), and scored PlanExe output (avg 1.0/8 on the patterns that predict shipping). Full evidence in files 01–04 of this directory and Bubba's research in `research/`.*
+*This proposal is grounded in 168 real plans from [arc-explainer](https://github.com/markbarney/arc-explainer), 22 real failures from 47 days of lobster ops, 5 prototype LODA-Agent programs, and scored PlanExe output (avg 1.0/8 on the patterns that predict shipping). Supporting research is in [VoynichLabs/swarm-coordination](https://github.com/VoynichLabs/swarm-coordination) under `plans/egon-dogfood-pr/` (analysis files 01–04) and `research/loda-dsl-exploration/` (LODA prototypes and feasibility study).*
