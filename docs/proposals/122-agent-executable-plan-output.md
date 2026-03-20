@@ -4,7 +4,7 @@
 **Date:** 2026-03-20
 **Status:** Ready for review
 **For:** PlanExeOrg/PlanExe PR
-**Evidence base:** All evidence is inline in this document. Supporting research is in [VoynichLabs/swarm-coordination](https://github.com/VoynichLabs/swarm-coordination) under `plans/egon-dogfood-pr/` and `research/`.
+**Evidence base:** All evidence is inline in this document.
 
 ---
 
@@ -177,4 +177,4 @@ This feeds back into future planning — PlanExe can read completion records to 
 
 ---
 
-*This proposal is grounded in 168 real plans from [arc-explainer](https://github.com/markbarney/arc-explainer), 22 real failures from 47 days of lobster ops, 5 prototype LODA-Agent programs, and scored PlanExe output (avg 1.0/8 on the patterns that predict shipping). Supporting research is in [VoynichLabs/swarm-coordination](https://github.com/VoynichLabs/swarm-coordination) under `plans/egon-dogfood-pr/` (analysis files 01–04) and `research/loda-dsl-exploration/` (LODA prototypes and feasibility study).*
+*This proposal is grounded in 168 real plans from arc-explainer (8 months, 4,185 commits), 22 real failures from 47 days of lobster ops, 5 prototype LODA-Agent programs, and scored PlanExe output (avg 1.0/8 on the patterns that predict shipping).*
