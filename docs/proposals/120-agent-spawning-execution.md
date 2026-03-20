@@ -117,7 +117,7 @@ This is orders of magnitude cheaper than waterfall PM oversight.
 
 ## Lineage: "Minimal Input → Machine Computes Output"
 
-This idea echoes **LODA** (supercompiler from Farbrausch demo scene) and the **"alchemy"** concept:
+This idea echoes the creative lineage of Simon's work — from his Farbrausch-inspired DAG editor (Toolbox, 2003–2009) to **LODA** (a language and miner for integer sequences, https://loda-lang.org/, Simon's Rust implementation) — and the **"alchemy"** concept:
 - Feed the machine a minimal specification (ingredients)
 - The machine computes an optimized solution (the transformation)
 - Humans provide oversight, not step-by-step instructions
@@ -203,7 +203,7 @@ If this resonates:
 
 ## Appendix: References
 
-- **LODA:** Supercompiler from Farbrausch (demo scene), "minimal input → machine transforms output"
+- **LODA:** A language and miner for integer sequences (https://loda-lang.org/). Simon wrote the Rust implementation (~6,000 commits). Discovers novel formulas from OEIS. NOT made by Farbrausch — Simon is a fan of Farbrausch and built his own werkkzeug-style DAG editor (Toolbox) 22 years ago, and has attended demoparties with Chaos and Ryg.
 - **Lobster Swarm Proof of Concept:** 3 agents, 308 PRs, 47 days (Feb-Mar 2026)
 - **OpenClaw Architecture:** Agent orchestration platform for multi-agent execution
 - **PlanExe ReviewTeamTask:** Generates fictional team rosters with expertise/roles
