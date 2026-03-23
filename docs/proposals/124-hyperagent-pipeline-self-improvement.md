@@ -18,7 +18,15 @@ The architecture: a task agent and a meta agent are combined into a **single edi
 
 ## The PlanExe Connection
 
-PlanExe already has the structural ingredients for a hyperagent architecture. The question is whether to make that structure explicit and self-improving.
+PlanExe already has the structural ingredients for a hyperagent architecture — and has already proven part of it works.
+
+**The `self_improve/` directory (Proposal 117) is `PipelineOptimizeTask` for one task.** It runs `IdentifyPotentialLeversTask` across baseline training data, iterates on the prompt (fix → test → analyze → keep/revert), and produces an auditable trail with 26 iterations completed. The `runner.py` already supports multiple steps via `--step` flag — `identify_potential_levers`, `deduplicate_levers`, `identify_documents`.
+
+Proposal 124 is not starting from scratch. It is proposing to:
+1. Generalize what `self_improve/` already does for a few tasks to the full 63-task pipeline
+2. Add the accumulation layer — the track record — that makes the improvement loop persistent and learnable
+
+Simon almost certainly had this context when he shared the Hyperagents paper. The question is not "should we build this" — we've already built part of it. The question is "what's the right architecture for the accumulation layer on top of what exists?"
 
 ### What we already have
 
