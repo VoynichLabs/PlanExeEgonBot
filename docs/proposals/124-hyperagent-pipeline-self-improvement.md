@@ -145,16 +145,21 @@ The transfer property for PlanExe: a better proposal mechanism that learns Simon
 
 **Phase 1 only matters if it's designed to feed the accumulation loop.** Visibility for its own sake isn't the point. The question is: what data format in Phase 1 makes Phase 2 accumulation possible?
 
+**Phase 1 doesn't start cold.** The existing PR history — 308+ merged PRs, timestamped, with Simon's accept/reject signal already baked in — is the seed data for the track record. `ProposalGenerationTask` can bootstrap from `git log` + PR merge history before the first pipeline run. Phase 1 and Phase 3 don't have to be sequential; visibility and calibration can start together.
+
+**The track record must persist on disk.** "Accumulates across runs" means the file must exist between pipeline invocations — not in memory, not per-run state. If it lives in RAM or gets reset per run, you lose the hyperagent property entirely. A flat append-only file in `docs/proposals/track_record.jsonl` is sufficient.
+
 ---
 
 ## Implementation Plan
 
 **Phase 1 (foundation — accumulation-first design):**
+- Pre-populate `docs/proposals/track_record.jsonl` from `git log` + PR merge history (bootstrap from existing signal)
 - Add `PipelineOptimizeTask` as an optional post-run analysis task (off by default)
 - Output: structured JSON designed to feed the track record, not just a report
   - `task_name`, `failure_mode`, `proposed_prompt_delta`, `estimated_quality_lift`
   - **Critical:** `proposal_id` field — every proposal gets a stable ID for tracking
-- Log output to `docs/proposals/track-record.jsonl` — never deleted, append-only
+- Append output to `docs/proposals/track_record.jsonl` — never deleted, append-only
 
 **Phase 2:**
 - Add `ProposalGenerationTask` that aggregates Phase 1 outputs
