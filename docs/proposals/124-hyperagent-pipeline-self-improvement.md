@@ -18,15 +18,26 @@ The architecture: a task agent and a meta agent are combined into a **single edi
 
 ## The PlanExe Connection
 
-PlanExe already has the structural ingredients for a hyperagent architecture — and has already proven part of it works.
+PlanExe already has **two** self-improvement systems in active development. Proposal 124 is proposing the meta-layer above both of them.
 
-**The `self_improve/` directory (Proposal 117) is `PipelineOptimizeTask` for one task.** It runs `IdentifyPotentialLeversTask` across baseline training data, iterates on the prompt (fix → test → analyze → keep/revert), and produces an auditable trail with 26 iterations completed. The `runner.py` already supports multiple steps via `--step` flag — `identify_potential_levers`, `deduplicate_levers`, `identify_documents`.
+### Layer 1 — `src/refine/` (self_improve1 branch)
+AlphaEvolve-inspired diff/patch system for iterative plan refinement. Takes a first-pass PlanExe output and patches it toward a v2 using SEARCH/REPLACE markers. This operates at the **task output** level — making individual generated plans better.
 
-Proposal 124 is not starting from scratch. It is proposing to:
-1. Generalize what `self_improve/` already does for a few tasks to the full 63-task pipeline
-2. Add the accumulation layer — the track record — that makes the improvement loop persistent and learnable
+### Layer 2 — `self_improve/` (Proposal 117)
+Prompt optimizer for pipeline tasks. Runs `IdentifyPotentialLeversTask` (and others via `--step`) across baseline training data, iterates on the prompt, and tracks 26 iterations of improvement. This operates at the **prompt** level — making the pipeline's instructions better.
 
-Simon almost certainly had this context when he shared the Hyperagents paper. The question is not "should we build this" — we've already built part of it. The question is "what's the right architecture for the accumulation layer on top of what exists?"
+### Layer 3 — This Proposal (Proposal 124)
+A meta-layer above both: accumulates signal across all runs, learns which improvements (whether to prompts or to refinement strategies) actually produce better outcomes, and generates structured proposals for Simon's review.
+
+The three-layer structure:
+```
+Layer 3: ProposalGenerationTask (this proposal) — learns from history, generates proposals
+Layer 2: self_improve/ — optimizes prompts per task
+Layer 1: src/refine/ — refines task outputs toward SMART criteria
+Layer 0: 63-task pipeline — generates the initial plan
+```
+
+The question is not "should we build this" — two of the three layers already exist. The question is: **what's the right architecture for the accumulation layer, and how does it coordinate the two systems below it?**
 
 ### What we already have
 
