@@ -129,34 +129,57 @@ What this proposal is: **a structured, auditable improvement loop** — making t
 
 ---
 
+## The Accumulation Property (What Makes This Worth Doing)
+
+The Hyperagents paper's key contribution isn't the editable meta-agent — it's that **meta-level improvements transfer across domains and accumulate across runs**. That's what DGM couldn't do. That's what PlanExe's current improvement loop also can't do.
+
+Right now the improvement mechanism is Simon reviewing PRs. It's not editable, it doesn't accumulate, and it doesn't transfer. Each PR is a one-off. The signal from Simon's accept/reject decision disappears.
+
+For this proposal to be worth implementing, `ProposalGenerationTask` needs a **track record** — a structured log of every proposal it generated, whether Simon merged it, and whether quality gate scores improved after the merge. Without that log, it's just generating proposals into the void. With it:
+
+- It learns Simon's review patterns: "architectural changes take longer," "prompt-level lever changes have high acceptance rate," "proposals with before/after examples get merged faster"
+- It routes accordingly: architectural changes to Simon with full context; low-risk prompt changes with a faster review signal
+- The improvement mechanism gets better at improving — the transfer insight from the paper
+
+The transfer property for PlanExe: a better proposal mechanism that learns Simon's patterns should work whether the plan is about a coffee shop or a biotech startup. The *pipeline structure* is the same even when the domain changes.
+
+**Phase 1 only matters if it's designed to feed the accumulation loop.** Visibility for its own sake isn't the point. The question is: what data format in Phase 1 makes Phase 2 accumulation possible?
+
+---
+
 ## Implementation Plan
 
-**Phase 1 (minimal):**
-- Add `PipelineOptimizeTask` as an optional post-run analysis task (off by default, enabled with a flag)
-- Output: JSON report of weak tasks + draft proposal text
-- No pipeline modification, no automation — just better visibility
+**Phase 1 (foundation — accumulation-first design):**
+- Add `PipelineOptimizeTask` as an optional post-run analysis task (off by default)
+- Output: structured JSON designed to feed the track record, not just a report
+  - `task_name`, `failure_mode`, `proposed_prompt_delta`, `estimated_quality_lift`
+  - **Critical:** `proposal_id` field — every proposal gets a stable ID for tracking
+- Log output to `docs/proposals/track-record.jsonl` — never deleted, append-only
 
 **Phase 2:**
-- Add `ProposalGenerationTask` that aggregates Phase 1 outputs across runs
+- Add `ProposalGenerationTask` that aggregates Phase 1 outputs
+- When Simon merges a proposal: log the merge + pre/post quality gate scores
+- `ProposalGenerationTask` reads the track record before generating new proposals
 - Produces formatted proposal documents in `docs/proposals/`
-- Still requires human review and manual PR
 
-**Phase 3 (optional, only if Phase 2 proves useful):**
-- Fast-path review for low-risk prompt modifications (not architectural changes)
-- Track record: measure which proposals actually improved quality when merged
-- Use track record to calibrate ProposalGenerationTask's recommendations
+**Phase 3:**
+- `ProposalGenerationTask` calibrates on acceptance patterns
+- Routes by learned signal: high-acceptance proposals fast-tracked, architectural changes flagged for Simon's full review
+- Track record becomes a first-class artifact — reviewed periodically like any other pipeline output
 
 ---
 
 ## Open Questions for Simon
 
-1. Is the pipeline's own improvement loop worth formalizing, or is the current ad-hoc PR process good enough?
+1. **Is the accumulation loop the point?** The Hyperagents paper's real contribution is that meta-improvements accumulate and transfer. If the answer to "does PlanExe need this?" depends on whether Simon's PR review patterns are learnable and repeatable, that's the question to answer first.
 
-2. The Hyperagents paper shows that meta-level improvements transfer across domains — does this hold for PlanExe's prompt modifications? (A better lever-identification prompt might not transfer to a better premise-attack prompt.)
+2. **Does transfer hold for PlanExe?** The paper shows meta-improvements transfer across domains. Does a better lever-identification prompt transfer to a better premise-attack prompt? Or are PlanExe's tasks too domain-specific for cross-task transfer?
 
-3. Is the right granularity for PipelineOptimizeTask at the prompt level, the task level, or the stage level? The lever pipeline already does something similar for plans — could the same methodology be applied to the pipeline itself?
+3. **What's the right accumulation granularity?** Track records at the proposal level (did this PR get merged?) or at the quality-gate level (did this prompt change improve scores?) or both?
 
-4. What would a good evaluation metric look like? Quality gate scores exist but they measure output, not pipeline efficiency. What does "this run was better than last run" mean for PlanExe?
+4. **Phase 1 design question:** What data format in `PipelineOptimizeTask` output makes Phase 2 accumulation actually possible? Getting this wrong in Phase 1 means rebuilding everything in Phase 2.
+
+5. **Is the self_improve/ directory the right home for this?** The repo already has a `self_improve/` directory (spotted in the branch list). Is there existing work there that overlaps with this proposal?
 
 ---
 
